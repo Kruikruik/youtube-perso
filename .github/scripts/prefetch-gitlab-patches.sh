@@ -29,13 +29,15 @@ if [ -z "$VER" ]; then echo "Aucune app ReVanced dans la config, rien à faire."
 mkdir -p temp/revanced-rv
 for v in $VER; do
   if [ "$v" = "latest" ]; then
-    rel=$(curl -fsSL "${API}/permalink/latest")
+    # dernière version STABLE (on ignore les -dev)
+    tag=$(curl -fsSL "${API}?per_page=100" | jq -r '.[].tag_name' | grep -v -- '-dev' | sort -V | tail -1)
   else
-    rel=$(curl -fsSL "${API}/${v}")
+    tag=$v
   fi
-  tag=$(jq -r .tag_name <<<"$rel")
-  url=$(jq -r '[.assets.links[] | select(.name | endswith(".rvp"))][0].direct_asset_url // [.assets.links[] | select(.name | endswith(".rvp"))][0].url' <<<"$rel")
-  if [ -z "$url" ] || [ "$url" = "null" ]; then echo "Pas de .rvp trouvé pour $tag"; exit 1; fi
+  rel=$(curl -fsSL "${API}/${tag}")
+  echo "Release $tag, fichiers :"; jq -r '.assets.links[] | "  \(.name)  \(.direct_asset_url // .url)"' <<<"$rel"
+  url=$(jq -r '[.assets.links[] | select(.name | test("\\.rvp$"))][0] | (.direct_asset_url // .url) // empty' <<<"$rel")
+  if [ -z "$url" ]; then echo "Pas de .rvp trouvé pour $tag"; jq . <<<"$rel" | head -80; exit 1; fi
   out="temp/revanced-rv/patches-${tag#v}.rvp"
   echo "Téléchargement des patchs ReVanced $tag -> $out"
   curl -fsSL -o "$out" "$url"
