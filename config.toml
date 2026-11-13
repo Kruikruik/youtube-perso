@@ -28,3 +28,17 @@ excluded-patches = """\
   'Spoof device dimensions' \
   'Voice over translation' \
   """
+
+# Twitch : patchs ReVanced (Morphe ne gère pas Twitch).
+# Les patchs sont récupérés sur GitLab par .github/scripts/prefetch-gitlab-patches.sh
+[Twitch]
+app-name = "Twitch"
+build-mode = "apk"
+patches-source = "ReVanced/revanced-patches"
+patches-version = "latest"
+cli-source = "ReVanced/revanced-cli"
+cli-version = "latest"
+rv-brand = "ReVanced"
+version = "auto"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/twitch-interactive-inc/twitch/"
+enable-update-checks = false

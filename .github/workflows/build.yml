@@ -40,6 +40,9 @@ jobs:
             fi
           fi
 
+      - name: Prefetch ReVanced patches (GitLab)
+        run: ./.github/scripts/prefetch-gitlab-patches.sh config.toml
+
       - name: Get next version code
         id: next_ver_code
         env:
