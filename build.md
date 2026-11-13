@@ -11,3 +11,4 @@ Patches: MorpheApp/morphe-patches/patches-2.2.0.mpp
 
 CLI: MorpheApp/morphe-cli/morphe-desktop-2.1.1-all.jar  
 CLI: ReVanced/revanced-cli/revanced-cli-6.0.0-all.jar    
+Patches: ReVanced/revanced-patches/patches-6.2.1.rvp  
