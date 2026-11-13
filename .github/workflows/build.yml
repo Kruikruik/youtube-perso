@@ -59,6 +59,12 @@ jobs:
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
 
+      - name: Note ReVanced patches version
+        run: |
+          if [ -n "${REVANCED_PATCHES_TAG:-}" ]; then
+            echo "Patches: ReVanced/revanced-patches/patches-${REVANCED_PATCHES_TAG#v}.rvp  " >> build.md
+          fi
+
       - name: Get output
         id: get_output
         run: |

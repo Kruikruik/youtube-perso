@@ -1,54 +1,43 @@
 name: CI
+# Vérifie chaque jour si une nouvelle version STABLE des patchs est sortie
+# (Morphe pour YouTube, ReVanced pour Twitch). Si oui : recompile tout.
 on:
   workflow_dispatch:
-  # compilation quotidienne désactivée (versions figées dans config.toml)
+  schedule:
+    - cron: "37 4 * * *"
 
 jobs:
   check:
-    permissions: write-all
     runs-on: ubuntu-latest
+    permissions: write-all
+    outputs:
+      SHOULD_BUILD: ${{ steps.check.outputs.SHOULD_BUILD }}
     steps:
-      - uses: actions/setup-java@v5
-        with:
-          distribution: "zulu"
-          java-version: "21"
-
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Should build?
-        id: should_build
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if ! git checkout origin/update build.md; then
-            echo "first time building!"
-            echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
-          else
-            UPDATE_CFG=$(./build.sh config.toml --config-update)
-            if [ "$UPDATE_CFG" ]; then
-              echo "'$UPDATE_CFG'"
-              echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
-            else
-              echo "SHOULD_BUILD=0" >> $GITHUB_OUTPUT
-            fi
-          fi
-
-      - name: Clear older runs
+      - name: Nouvelles versions des patchs ?
+        id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh run list -L400 --json databaseId -q '.[].databaseId' | tail -n+10 | xargs -IID gh api "repos/$GITHUB_REPOSITORY/actions/runs/ID" -X DELETE || :
+          morphe=$(gh api repos/MorpheApp/morphe-patches/releases/latest -q .tag_name)
+          revanced=$(curl -fsSL https://api.revanced.app/v5/patches | jq -r .version)
+          last=$(gh release view -R "$GITHUB_REPOSITORY" --json body -q .body 2>/dev/null || true)
+          echo "Morphe: $morphe | ReVanced: $revanced"
+          build=0
+          grep -q "morphe-patches/patches-${morphe#v}\." <<<"$last" || { echo "-> nouveaux patchs Morphe"; build=1; }
+          grep -q "revanced-patches/patches-${revanced#v}\." <<<"$last" || { echo "-> nouveaux patchs ReVanced"; build=1; }
+          echo "SHOULD_BUILD=$build" >> "$GITHUB_OUTPUT"
 
-    outputs:
-      SHOULD_BUILD: ${{ steps.should_build.outputs.SHOULD_BUILD }}
+      - name: Nettoyer les vieux runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list -R "$GITHUB_REPOSITORY" -L400 --json databaseId -q '.[].databaseId' | tail -n+20 | xargs -IID gh api "repos/$GITHUB_REPOSITORY/actions/runs/ID" -X DELETE || :
 
   build:
     permissions: write-all
     needs: check
+    if: ${{ needs.check.outputs.SHOULD_BUILD == '1' }}
     uses: ./.github/workflows/build.yml
-    if: ${{ needs.check.outputs.SHOULD_BUILD == 1 }}
+    with:
+      from_ci: false
     secrets: inherit

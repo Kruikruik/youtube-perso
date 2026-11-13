@@ -40,4 +40,5 @@ mkdir -p temp/revanced-rv
 out="temp/revanced-rv/patches-${api_ver#v}.rvp"
 curl -fsSL -o "$out" "$url"
 unzip -l "$out" >/dev/null || { echo "Le fichier téléchargé n'est pas un .rvp valide"; exit 1; }
+echo "REVANCED_PATCHES_TAG=${api_ver}" >> "${GITHUB_ENV:-/dev/null}"
 ls -l temp/revanced-rv

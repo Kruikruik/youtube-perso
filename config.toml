@@ -1,19 +1,20 @@
 # Config perso : YouTube sans pubs + confort de visionnage
 # Doc des options : CONFIG.md
 #
-# Tout est figé pour éviter les mauvaises surprises.
-# Pour mettre à jour : change patches-version / cli-version / version,
-# pousse le fichier, et la compilation se relance toute seule.
+# Mode automatique : dernières versions STABLES des patchs, et pour chaque appli
+# la version la plus récente supportée par ces patchs (jamais les expérimentales).
+# Le workflow CI vérifie chaque jour et recompile seulement s'il y a du nouveau.
+# Pour figer une version : remplace "latest" / "auto" par un numéro.
 
 enable-module-update = false
 parallel-jobs = 1
-patches-version = "v2.2.0"
-cli-version = "v2.1.1"
+patches-version = "latest"
+cli-version = "latest"
 
 [YouTube-Morphe]
 app-name = "YouTube"
 build-mode = "apk"            # APK non-root (connexion Google via MicroG / GmsCore)
-version = "21.30.216"         # plus récente version stable supportée par les patchs v2.2.0
+version = "auto"              # plus récente version stable supportée par les patchs
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
 enable-update-checks = false
