@@ -1,46 +1,30 @@
-enable-module-update = true # set this to false if you do not want to receive updates for the module
+# Config perso : YouTube sans pubs + confort de visionnage
+# Doc des options : CONFIG.md
+#
+# Tout est figé pour éviter les mauvaises surprises.
+# Pour mettre à jour : change patches-version / cli-version / version,
+# pousse le fichier, et la compilation se relance toute seule.
+
+enable-module-update = false
 parallel-jobs = 1
-
-# add 'enabled = false' for not patching a specific app or remove it from the config
-# see https://github.com/j-hc/revanced-magisk-module/blob/main/CONFIG.md for more detailed explanations
-
-# you can use rvmm-config-gen to generate a config
+patches-version = "v2.2.0"
+cli-version = "v2.1.1"
 
 [YouTube-Morphe]
 app-name = "YouTube"
-build-mode = "both"
+build-mode = "apk"            # APK non-root (connexion Google via MicroG / GmsCore)
+version = "21.30.216"         # plus récente version stable supportée par les patchs v2.2.0
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
-enable-update-checks = true
+enable-update-checks = false
 
-[Music-Morphe]
-app-name = "Music"
-build-mode = "both"
-arch = "both"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
-archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.apps.youtube.music"
-enable-update-checks = true
-
-[Reddit-Morphe]
-app-name = "Reddit"
-build-mode = "apk"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/redditinc/reddit/"
-archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.reddit.frontpage"
-dpi = "120-640dpi"
-enable-update-checks = true
-
-[GooglePhotos]
-build-mode = "both"
-patches-source = "RookieEnough/De-Vanced"
-rv-brand = "DeVanced"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
-archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.apps.photos"
-enable-update-checks = true
-
-[Twitter]
-patches-source = "crimera/piko-newx"
-rv-brand = "Piko"
-archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.twitter.android"
-version = "latest"
-included-patches = "'NewX: Restore Twitter branding'"
-enable-update-checks = true
+# Patchs par défaut gardés : Hide ads, arrière-plan, SponsorBlock,
+# Return YouTube Dislike, qualité/vitesse par défaut, Swipe controls,
+# masquer Shorts / cartes de fin, etc. (réglables dans l'appli).
+# On retire juste quelques gadgets inutiles.
+excluded-patches = """\
+  'Enable debugging' \
+  'Change form factor' \
+  'Spoof device dimensions' \
+  'Voice over translation' \
+  """
