@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
-# Les patchs ReVanced ne sont plus publiés sur GitHub (dépôt retiré en 2026),
-# seulement sur GitLab. Le builder ne sait télécharger que depuis GitHub :
-# on pré-télécharge donc le .rvp dans le cache du builder (temp/revanced-rv/),
-# qu'il réutilise ensuite sans rien demander à GitHub.
+# Les patchs ReVanced ne sont plus publiés sur GitHub (dépôt retiré en 2026).
+# Le fichier .rvp est distribué par l'API officielle de ReVanced.
+# Le builder ne sait télécharger que depuis GitHub : on pré-télécharge donc le .rvp
+# dans son cache (temp/revanced-rv/), qu'il réutilise ensuite tel quel.
 set -euo pipefail
 
 CFG=${1:-config.toml}
-PROJECT="ReVanced%2Frevanced-patches"
-API="https://gitlab.com/api/v4/projects/${PROJECT}/releases"
+API="https://api.revanced.app/v5/patches"
 
-# Version demandée dans config.toml pour les apps qui utilisent ReVanced/revanced-patches
 VER=$(python3 -I - "$CFG" <<'PY'
 import sys, tomllib
 cfg = tomllib.load(open(sys.argv[1], "rb"))
@@ -23,24 +21,23 @@ for k, v in cfg.items():
 print(" ".join(sorted(vers)))
 PY
 )
-
 if [ -z "$VER" ]; then echo "Aucune app ReVanced dans la config, rien à faire."; exit 0; fi
 
-mkdir -p temp/revanced-rv
+info=$(curl -fsSL "$API")
+api_ver=$(jq -r .version <<<"$info")
+url=$(jq -r '.download_url // "https://api.revanced.app/v5/patches.rvp"' <<<"$info")
+echo "Patchs ReVanced disponibles : $api_ver ($url)"
+
 for v in $VER; do
-  if [ "$v" = "latest" ]; then
-    # dernière version STABLE (on ignore les -dev)
-    tag=$(curl -fsSL "${API}?per_page=100" | jq -r '.[].tag_name' | grep -v -- '-dev' | sort -V | tail -1)
-  else
-    tag=$v
+  if [ "$v" != "latest" ] && [ "${v#v}" != "${api_ver#v}" ]; then
+    echo "La config demande $v mais l'API ReVanced ne sert que $api_ver."
+    echo "Mets patches-version = \"$api_ver\" (ou \"latest\") pour Twitch dans config.toml."
+    exit 1
   fi
-  rel=$(curl -fsSL "${API}/${tag}")
-  echo "Release $tag, fichiers :"; jq -r '.assets.links[] | "  \(.name)  \(.direct_asset_url // .url)"' <<<"$rel"
-  url=$(jq -r '[.assets.links[] | select(.name | test("\\.rvp$"))][0] | (.direct_asset_url // .url) // empty' <<<"$rel")
-  if [ -z "$url" ]; then echo "Pas de .rvp trouvé pour $tag"; jq . <<<"$rel" | head -80; exit 1; fi
-  out="temp/revanced-rv/patches-${tag#v}.rvp"
-  echo "Téléchargement des patchs ReVanced $tag -> $out"
-  curl -fsSL -o "$out" "$url"
-  echo "REVANCED_PATCHES_TAG=$tag" >> "${GITHUB_ENV:-/dev/null}"
 done
+
+mkdir -p temp/revanced-rv
+out="temp/revanced-rv/patches-${api_ver#v}.rvp"
+curl -fsSL -o "$out" "$url"
+unzip -l "$out" >/dev/null || { echo "Le fichier téléchargé n'est pas un .rvp valide"; exit 1; }
 ls -l temp/revanced-rv
